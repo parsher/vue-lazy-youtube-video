@@ -61,7 +61,10 @@ export default Vue.extend({
       required: true,
       validator: value => {
         if (typeof value === 'string') {
-          return value.startsWith('https://www.youtube.com/watch?v=')
+          return (
+            value.startsWith('https://www.youtube.com/watch?v=') ||
+            value.startsWith('https://youtu.be/')
+          )
         } else {
           return false
         }
@@ -118,7 +121,7 @@ export default Vue.extend({
   },
   computed: {
     id(): string {
-      const regExp = /^https:\/\/www\.youtube\.com\/watch\?v=(.+)$/
+      const regExp = /(?:(?:v=|(?:v%3D))|(?:\/(?:v|e)\/)|(?:(?:(?:youtu.be)|(?:embed))\/))([^&\n#?%]+)/
       const executionResult = regExp.exec(this.url)
       if (executionResult !== null) {
         return executionResult[1]
@@ -126,6 +129,15 @@ export default Vue.extend({
         this.warn(
           `Failed to extract video id from ${this.url}`
         )
+        return ''
+      }
+    },
+    urlQuery() : string {
+      const regExp = /\&([^&=]+)=([^&=]+)(?:&([^&=]+)=([^&=]+))*$/
+      const executionResult = regExp.exec(this.url)
+      if (executionResult !== null) {
+        return executionResult[0]
+      } else {
         return ''
       }
     },
@@ -139,7 +151,7 @@ export default Vue.extend({
     generateURL() {
       return `https://www.youtube${
         this.noCookie ? '-nocookie' : ''
-      }.com/embed/${this.id}${this.query}`
+      }.com/embed/${this.id}${this.query}${this.urlQuery}`
     },
     clickHandler() {
       this.clicked = true
@@ -171,7 +183,7 @@ export default Vue.extend({
       const [a, b] = aspectRatio.split(':')
       return this.getPaddingBottomValue(Number(a), Number(b))
     },
-    getPaddingBottomValue(a:number, b:number) {
+    getPaddingBottomValue(a: number, b: number) {
       return `${(b / a) * 100}%`
     },
     warn(message: string) {
